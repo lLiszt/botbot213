@@ -21,7 +21,7 @@ const config = {
 };
 
 // base URL for webhook server
-const baseURL = 'https://git.heroku.com/botbot213.git';
+const baseURL = 'https://botbot213.herokuapp.com/';
 
 // create LINE SDK client
 const client = new line.Client(config);
