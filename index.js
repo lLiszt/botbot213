@@ -7,13 +7,17 @@ const path = require('path');
 const cp = require('child_process');
 const line = require('@line/bot-sdk');
 
+
 const app = express()
-const port = process.env.PORT || 4000
-app.listen(port)
+
+app.set('port', (4000));
+app.listen(app.get('port'), function () {
+  console.log('run at port', app.get('port'));
+});
 
 const config = {
   channelAccessToken: 'UjrsRyWdu+aC7ZTxNZDTOvWpEUfZXQtIeNvCBNIU+BCgfx6rpIovP3eg4wqbgDoL9pKY27wM7KGn6lQddob2DYHlnTtBA9IK9pF8M4q6cGt8QBUV4FCyzbgGfo7N4oo2L7y1aYhcOSU6bjggJS6+mgdB04t89/1O/w1cDnyilFU=',
-  channelSecret: 'f9c56d46155aa1a95647447e80b116b4',
+  channelSecret: 'f9c56d46155aa1a95647447e80b116b4'
 };
 
 // base URL for webhook server
@@ -21,22 +25,25 @@ const baseURL = 'https://git.heroku.com/botbot213.git';
 
 // create LINE SDK client
 const client = new line.Client(config);
-app.use('/static', express.static('static'));
-app.use('/downloaded', express.static('downloaded'));
+
+// app.use('/static', express.static('static'));
+// app.use('/downloaded', express.static('downloaded'));
 
 app.post('/webhook', line.middleware(config), (req, res) => {
   // req.body.events should be an array of events
+
   if (!Array.isArray(req.body.events)) {
     return res.status(500).end();
   }
 
-  // handle events separately
-  Promise.all(req.body.events.map(handleEvent))
-    .then(() => res.end())
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
     .catch((err) => {
       console.error(err);
       res.status(500).end();
     });
+
 });
 
 // function replyText(reply_token, msg, user) {
@@ -71,8 +78,6 @@ const replyText = (token, texts) => {
 };
 
 function handleEvent(event) {
-
-
   switch (event.type) {
     case 'message':
       const message = event.message;
