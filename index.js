@@ -1,12 +1,29 @@
-'use strict';
+// Echo reply
+"use strict";
 
-const line = require('@line/bot-sdk');
-const express = require('express');
-const fs = require('fs');
+
+const express = require('express')
+const bodyParser = require('body-parser')
+const request = require('request')
+const AIMLParser = require('aimlparser')
 const path = require('path');
 const cp = require('child_process');
+const fs = require('fs');
+const line = require('@line/bot-sdk');
 
-// create LINE SDK config from env variables
+
+
+
+const app = express()
+const port = process.env.PORT || 4000
+app.listen(port)
+
+
+ 
+
+
+
+
 const config = {
   channelAccessToken: process.env.'UjrsRyWdu+aC7ZTxNZDTOvWpEUfZXQtIeNvCBNIU+BCgfx6rpIovP3eg4wqbgDoL9pKY27wM7KGn6lQddob2DYHlnTtBA9IK9pF8M4q6cGt8QBUV4FCyzbgGfo7N4oo2L7y1aYhcOSU6bjggJS6+mgdB04t89/1O/w1cDnyilFU=',
   channelSecret: process.env.'f9c56d46155aa1a95647447e80b116b4',
@@ -17,17 +34,12 @@ const baseURL = process.env.'https://git.heroku.com/botbot213.git';
 
 // create LINE SDK client
 const client = new line.Client(config);
-
-// create Express app
-// about Express itself: https://expressjs.com/
-const app = express();
-
-// serve static and downloaded files
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 app.use('/static', express.static('static'));
 app.use('/downloaded', express.static('downloaded'));
 
-// webhook callback
-app.post('/callback', line.middleware(config), (req, res) => {
+app.post('/webhook', line.middleware(config), (req, res) => {
   // req.body.events should be an array of events
   if (!Array.isArray(req.body.events)) {
     return res.status(500).end();
@@ -42,16 +54,32 @@ app.post('/callback', line.middleware(config), (req, res) => {
     });
 });
 
-// simple reply function
-const replyText = (token, texts) => {
-  texts = Array.isArray(texts) ? texts : [texts];
-  return client.replyMessage(
-    token,
-    texts.map((text) => ({ type: 'text', text }))
-  );
-};
 
-// callback function to handle a single event
+
+
+
+function replyText(reply_token, msg , user) {
+    let headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer {ffoSQHv7DNQl8fCqtoCR7aZlf+wHzJcNd7K9crw+nIcZcTepvAZ3933vuwEwSnUxg41iHupe5eZHvPkYDGxLJEcwZUlA/+kS6bWbL0OtbsYC1b6/NfVnXX09z4uUhzHvza4UrjWsRx8nAsA1vsLHPAdB04t89/1O/w1cDnyilFU=}'
+    }
+
+    let body = JSON.stringify({
+        replyToken: reply_token,
+        messages: [{
+            type: 'text',
+            text: msg+" --> "+user
+        }]
+    })
+
+    request.post({
+        url: 'https://api.line.me/v2/bot/message/reply',
+        headers: headers,
+        body: body
+    }, (err, res, body) => {
+        console.log('status = ' + res.statusCode);
+    });
+}
 function handleEvent(event) {
   switch (event.type) {
     case 'message':
@@ -257,7 +285,7 @@ function handleText(message, replyToken, source) {
       console.log(`Echo message to ${replyToken}: ${message.text}`);
       return replyText(replyToken, message.text);
   }
-}
+
 
 function handleImage(message, replyToken) {
   const downloadPath = path.join(__dirname, 'downloaded', `${message.id}.jpg`);
@@ -323,15 +351,3 @@ function handleAudio(message, replyToken) {
         });
     });
 }
-
-
-
-
-
-
-
-// listen on port
-const port = process.env.PORT=1234 || 3000;
-app.listen(port, () => {
-  console.log(`listening on ${port}`);
-});
